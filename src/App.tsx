@@ -26,24 +26,26 @@ const HOME_PATHS = /^\/($|plan|bibliothek)/;
 function TabBar() {
   const { setStartOpen, openSession } = useUi();
   const { pathname } = useLocation();
+  // Die Tippflächen reichen bis zum unteren Rand; der Inhalt sitzt über dem Home-Balken.
+  const item = 'press relative flex items-center justify-center gap-1.5 pb-[var(--tabbar-pad)]';
   return (
-    <nav className="shrink-0 border-t border-line/[0.06] bg-bg/95 backdrop-blur" style={{ paddingBottom: 'var(--tabbar-pad)' }} aria-label="Hauptnavigation">
-      <div className="grid h-[var(--tabbar-h)] grid-cols-3">
+    <nav className="shrink-0 border-t border-line/[0.06] bg-bg/95 backdrop-blur" aria-label="Hauptnavigation">
+      <div className="grid grid-cols-3" style={{ height: 'calc(var(--tabbar-h) + var(--tabbar-pad))' }}>
         {TABS.map((t) =>
           t.to === '/training' ? (
-            <TrainingTab key={t.to} onStart={() => setStartOpen(true)} onOpen={openSession} />
+            <TrainingTab key={t.to} className={item} onStart={() => setStartOpen(true)} onOpen={openSession} />
           ) : (
-            <NavLink key={t.to} to={t.to} end={t.to === '/'} className="press relative flex flex-col items-center justify-center gap-px">
+            <NavLink key={t.to} to={t.to} end={t.to === '/'} className={item}>
               {({ isActive: exact }) => {
                 const isActive = t.to === '/' ? HOME_PATHS.test(pathname) : exact;
                 return (
-                <>
-                  {isActive && (
-                    <motion.span layoutId="tab-dot" className="absolute top-0 h-[3px] w-5 rounded-b-full bg-acc" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />
-                  )}
-                  <Icon name={t.icon} size={22} strokeWidth={isActive ? 2.3 : 1.8} className={isActive ? 'text-fg' : 'text-dim'} />
-                  <span className={`text-[10px] font-semibold leading-none ${isActive ? 'text-fg' : 'text-dim'}`}>{t.label}</span>
-                </>
+                  <>
+                    {isActive && (
+                      <motion.span layoutId="tab-dot" className="absolute top-0 h-[2px] w-8 rounded-b-full bg-acc" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />
+                    )}
+                    <Icon name={t.icon} size={18} strokeWidth={isActive ? 2.3 : 1.9} className={isActive ? 'text-fg' : 'text-dim'} />
+                    <span className={`text-[12px] font-semibold ${isActive ? 'text-fg' : 'text-dim'}`}>{t.label}</span>
+                  </>
                 );
               }}
             </NavLink>
@@ -55,14 +57,14 @@ function TabBar() {
 }
 
 /** Mittlerer Tab öffnet direkt die Trainingsauswahl bzw. die laufende Session. */
-function TrainingTab({ onStart, onOpen }: { onStart: () => void; onOpen: () => void }) {
+function TrainingTab({ onStart, onOpen, className }: { onStart: () => void; onOpen: () => void; className: string }) {
   const hasActive = useActiveFlag();
   return (
-    <button type="button" onClick={hasActive ? onOpen : onStart} className="press flex flex-col items-center justify-center gap-[3px]" aria-label={hasActive ? 'Laufendes Training öffnen' : 'Training starten'}>
-      <span className="grid h-7 w-11 place-items-center rounded-full bg-acc text-onacc">
-        <Icon name={hasActive ? 'timer' : 'plus'} size={18} strokeWidth={2.6} />
+    <button type="button" onClick={hasActive ? onOpen : onStart} className={className} aria-label={hasActive ? 'Laufendes Training öffnen' : 'Training starten'}>
+      <span className="flex h-[26px] items-center gap-1 rounded-full bg-acc pl-2 pr-2.5 text-onacc">
+        <Icon name={hasActive ? 'timer' : 'plus'} size={16} strokeWidth={2.8} />
+        <span className="text-[12px] font-bold">{hasActive ? 'Läuft' : 'Training'}</span>
       </span>
-      <span className="text-[10px] font-semibold leading-none text-acc">{hasActive ? 'Läuft' : 'Training'}</span>
     </button>
   );
 }

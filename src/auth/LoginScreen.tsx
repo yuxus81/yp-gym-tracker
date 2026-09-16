@@ -29,10 +29,9 @@ export function LoginScreen() {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }} className="flex justify-center">
           <Logo className="h-28 w-auto" />
         </motion.div>
-        <h1 className="mt-8 text-[34px] font-bold tracking-tight">YP Gym Tracker</h1>
-        <p className="mt-1 text-[15px] text-mute">Einmal anmelden — danach funktioniert alles auch ohne Netz.</p>
+        <h1 className="mt-8 text-center text-[34px] font-bold tracking-tight">YP Gym Tracker</h1>
 
-        <form onSubmit={submit} className="mt-6 space-y-4">
+        <form onSubmit={submit} className="mt-8 space-y-4">
           <Field label="E-Mail">
             <input
               className={inputCls}

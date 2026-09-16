@@ -21,7 +21,10 @@
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tabbar-h: 64px;
+  /* Wie die native iOS-Tab-Leiste (49 pt). Unten nur so viel Abstand, dass der
+     Home-Balken nichts verdeckt — die vollen 34 px von iOS wären hier verschenkt. */
+  --tabbar-h: 50px;
+  --tabbar-pad: max(6px, calc(env(safe-area-inset-bottom, 0px) - 14px));
 
   color-scheme: dark;
 }

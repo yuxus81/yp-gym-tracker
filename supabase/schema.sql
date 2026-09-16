@@ -41,6 +41,7 @@ create table if not exists public.plan_days (
   sort integer not null default 0,
   archived boolean not null default false,
   notes text not null default '',
+  areas text[] not null default '{}',
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
@@ -72,6 +73,7 @@ create table if not exists public.sessions (
   started_at timestamptz not null,
   ended_at timestamptz,
   exercise_ids uuid[] not null default '{}',
+  areas text[] not null default '{}',
   notes text not null default '',
   energy smallint check (energy between 1 and 5),
   bodyweight numeric(5, 2),
@@ -95,6 +97,10 @@ create table if not exists public.session_sets (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
+
+-- Nachträglich hinzugekommene Spalten (für bestehende Datenbanken) ---------
+alter table public.plan_days add column if not exists areas text[] not null default '{}';
+alter table public.sessions add column if not exists areas text[] not null default '{}';
 
 -- Trigger, Indizes, Row Level Security -------------------------------------
 do $$

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/store/auth';
 import type { SyncRow } from '@/domain/types';
 import { mergeIncoming, nextCursor, stillSame, toRemote } from './merge';
-import { seedIfEmpty } from '@/data/seed';
+import { removeLegacySeed } from '@/data/legacySeed';
 
 type Phase = 'idle' | 'syncing' | 'offline' | 'error' | 'device';
 
@@ -32,7 +32,8 @@ async function push(table: SyncTable) {
   for (;;) {
     const rows = await t.where('dirty').equals(1).limit(PUSH_CHUNK).toArray();
     if (rows.length === 0) return;
-    const { error } = await supabase.from(table).upsert(rows.map(toRemote), { onConflict: 'id' });
+    // defaultToNull: false – Felder, die eine Zeile nicht mitbringt (z. B. alte Spalten), bekommen den Spalten-Standard.
+    const { error } = await supabase.from(table).upsert(rows.map(toRemote), { onConflict: 'id', defaultToNull: false });
     if (error) throw new Error(`${table}: ${error.message}`);
     // Nur bestätigen, was sich während des Uploads nicht erneut geändert hat.
     let cleared = 0;
@@ -84,6 +85,22 @@ async function pull(table: SyncTable) {
   }
 }
 
+/**
+ * Lädt jede Tabelle für sich hoch. Scheitert eine (z. B. weil eine neue Spalte auf dem Server
+ * noch fehlt), laufen die anderen trotzdem durch; der Fehler wird am Ende gemeldet.
+ */
+async function pushAll() {
+  let first: unknown = null;
+  for (const table of SYNC_TABLES) {
+    try {
+      await push(table);
+    } catch (e) {
+      first ??= e;
+    }
+  }
+  if (first) throw first;
+}
+
 async function runOnce() {
   const auth = useAuth.getState();
   if (auth.status === 'device') {
@@ -99,11 +116,13 @@ async function runOnce() {
   if (!data.session) return; // Token wird erneuert, sobald Netz stabil ist
 
   useSync.setState({ phase: 'syncing' });
-  for (const table of SYNC_TABLES) await push(table);
+  const failed = (e: unknown) => e;
+  await pushAll().catch(failed);
   for (const table of SYNC_TABLES) await pull(table);
-  await seedIfEmpty();
-  // Frisch angelegte Start-Übungen gleich mit hochladen.
-  for (const table of SYNC_TABLES) await push(table);
+  await removeLegacySeed();
+  // Ein Upload-Fehler blockiert den Download nicht, wird aber gemeldet (Daten bleiben dirty).
+  const pushError = await pushAll().then(() => null, failed);
+  if (pushError) throw pushError;
   failures = 0;
   useSync.setState({ phase: 'idle', lastSyncedAt: Date.now(), error: null });
 }
@@ -147,7 +166,7 @@ export function startSync() {
 
   void (async () => {
     if (useAuth.getState().status === 'device') {
-      await seedIfEmpty();
+      await removeLegacySeed();
       useSync.setState({ phase: 'device' });
     }
     void syncNow();

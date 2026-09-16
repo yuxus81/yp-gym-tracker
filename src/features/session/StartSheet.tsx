@@ -6,7 +6,7 @@ import { Sheet } from '@/components/Sheet';
 import { Button } from '@/components/ui';
 import { useAllPlanLinks, useExerciseMap, usePlanDays } from '@/db/queries';
 import { weekdayIndex } from '@/domain/calc';
-import { loadFromExercises } from '@/domain/muscles';
+import { loadFromAreas } from '@/domain/muscles';
 import { DAY_COLORS, dayColor, type PlanDay } from '@/domain/types';
 import { unlockAudio } from '@/lib/sound';
 import { useUi } from '@/store/ui';
@@ -27,14 +27,14 @@ export function StartSheet() {
   }, [startOpen, days, today]);
 
   const info = useMemo(() => {
-    const m = new Map<string, { names: string[]; load: ReturnType<typeof loadFromExercises> }>();
+    const m = new Map<string, string[]>();
     for (const d of days ?? []) {
       const exs = (links ?? [])
         .filter((l) => l.plan_day_id === d.id)
         .sort((a, b) => a.sort - b.sort)
         .map((l) => exMap?.get(l.exercise_id))
         .filter((e): e is NonNullable<typeof e> => !!e && !e.deleted_at);
-      m.set(d.id, { names: exs.map((e) => e.name), load: loadFromExercises(exs) });
+      m.set(d.id, exs.map((e) => e.name));
     }
     return m;
   }, [days, links, exMap]);
@@ -71,7 +71,7 @@ export function StartSheet() {
             transition={{ duration: 0.25 }}
             className="absolute inset-0 flex justify-center"
           >
-            <BodyMap load={chosen ? (info.get(chosen.id)?.load ?? {}) : {}} tint={tint} className="h-full" />
+            <BodyMap load={loadFromAreas(chosen?.areas)} tint={tint} className="h-full" />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -79,7 +79,7 @@ export function StartSheet() {
       <ul className="space-y-2" role="radiogroup" aria-label="Trainingstag">
         {days?.map((d) => {
           const on = sel === d.id;
-          const names = info.get(d.id)?.names ?? [];
+          const names = info.get(d.id) ?? [];
           return (
             <li key={d.id}>
               <button

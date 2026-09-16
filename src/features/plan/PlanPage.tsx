@@ -1,15 +1,15 @@
 import { motion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BodyMap } from '@/components/BodyMap';
 import { Icon } from '@/components/Icon';
 import { Button, Empty, SectionTitle } from '@/components/ui';
 import { useAllPlanLinks, useExerciseMap, useExercises, usePlanDays } from '@/db/queries';
 import { insert } from '@/db/repo';
-import { createSamplePlan } from '@/data/seed';
-import { loadFromExercises } from '@/domain/muscles';
+import { loadFromAreas } from '@/domain/muscles';
 import { dayColor, DAY_COLORS, WEEKDAYS, type PlanDay } from '@/domain/types';
 import { weekdayIndex } from '@/domain/calc';
+import { NEW_DAY_NAME } from './PlanDayEditor';
 
 /** Trainingsplan als Abschnitt der Home-Seite (weiter unten beim Scrollen). */
 export function PlanSection() {
@@ -18,35 +18,28 @@ export function PlanSection() {
   const exMap = useExerciseMap();
   const exercises = useExercises();
   const nav = useNavigate();
-  const [busy, setBusy] = useState(false);
   const today = weekdayIndex(new Date());
 
   const stats = useMemo(() => {
-    const m = new Map<string, { count: number; sets: number; load: ReturnType<typeof loadFromExercises> }>();
+    const m = new Map<string, { count: number; sets: number }>();
     for (const d of days ?? []) {
-      const ls = (links ?? []).filter((l) => l.plan_day_id === d.id);
-      const exs = ls.map((l) => exMap?.get(l.exercise_id)).filter((e): e is NonNullable<typeof e> => !!e && !e.deleted_at);
-      m.set(d.id, { count: exs.length, sets: ls.reduce((a, l) => a + l.target_sets, 0), load: loadFromExercises(exs) });
+      const ls = (links ?? []).filter((l) => l.plan_day_id === d.id && !!exMap?.get(l.exercise_id) && !exMap.get(l.exercise_id)!.deleted_at);
+      m.set(d.id, { count: ls.length, sets: ls.reduce((a, l) => a + l.target_sets, 0) });
     }
     return m;
   }, [days, links, exMap]);
 
   const addDay = async () => {
     const d = await insert<PlanDay>('plan_days', {
-      name: 'Neuer Trainingstag',
+      name: NEW_DAY_NAME,
       color: (days?.length ?? 0) % DAY_COLORS.length,
       weekdays: [],
       sort: days?.length ?? 0,
       archived: false,
       notes: '',
+      areas: [],
     });
     nav(`/plan/${d.id}?neu=1`);
-  };
-
-  const loadSample = async () => {
-    setBusy(true);
-    await createSamplePlan();
-    setBusy(false);
   };
 
   return (
@@ -67,16 +60,11 @@ export function PlanSection() {
           <Empty
             icon="plan"
             title="Noch kein Trainingsplan"
-            text="Lege deine Trainingstage an — z. B. „Schulter & Arme“ — und wähle, welche Übungen dazugehören."
+            text="Lege deine Trainingstage an — z. B. „Rücken“ — tippe die Bereiche an und schreib deine Übungen dazu."
             action={
-              <div className="flex flex-col gap-2">
-                <Button variant="primary" icon="plus" onClick={addDay}>
-                  Ersten Tag anlegen
-                </Button>
-                <Button variant="ghost" onClick={loadSample} disabled={busy}>
-                  Beispielplan laden (4 Tage)
-                </Button>
-              </div>
+              <Button variant="primary" icon="plus" onClick={addDay}>
+                Ersten Tag anlegen
+              </Button>
             }
           />
         )}
@@ -124,7 +112,7 @@ export function PlanSection() {
                     </span>
                   </span>
                   <span className="flex w-[104px] shrink-0 items-center justify-center pr-2">
-                    <BodyMap load={s?.load ?? {}} tint={DAY_COLORS[d.color % DAY_COLORS.length].rgb} className="h-[92px] w-[96px]" />
+                    <BodyMap load={loadFromAreas(d.areas)} tint={DAY_COLORS[d.color % DAY_COLORS.length].rgb} className="h-[92px] w-[96px]" />
                   </span>
                 </button>
               </motion.li>

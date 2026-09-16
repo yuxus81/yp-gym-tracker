@@ -8,9 +8,9 @@ import { Icon } from '@/components/Icon';
 import { Logo } from '@/components/Logo';
 import { SyncPill } from '@/components/SyncPill';
 import { Button, IconButton, SectionTitle } from '@/components/ui';
-import { useActiveSession, useAllDoneSets, useAllPlanLinks, useExerciseMap, useFinishedSessions, usePlanDays } from '@/db/queries';
+import { useActiveSession, useAllDoneSets, useAllPlanLinks, useFinishedSessions, usePlanDays } from '@/db/queries';
 import { formatDuration, formatVolume, setVolume, weekdayIndex } from '@/domain/calc';
-import { loadFromExercises, loadFromSetCounts } from '@/domain/muscles';
+import { loadFromAreaCounts, loadFromAreas, sessionAreas } from '@/domain/muscles';
 import { DAY_COLORS, dayColor } from '@/domain/types';
 import { useUi } from '@/store/ui';
 import { PlanSection } from '../plan/PlanPage';
@@ -27,7 +27,6 @@ export function TodayPage() {
   const nav = useNavigate();
   const days = usePlanDays();
   const links = useAllPlanLinks();
-  const exMap = useExerciseMap();
   const sessions = useFinishedSessions();
   const doneSets = useAllDoneSets();
   const active = useActiveSession();
@@ -48,14 +47,7 @@ export function TodayPage() {
   }, [days, todayIdx]);
 
   const featured = todays[0];
-  const featuredLoad = useMemo(() => {
-    if (!featured) return {};
-    const exs = (links ?? [])
-      .filter((l) => l.plan_day_id === featured.id)
-      .map((l) => exMap?.get(l.exercise_id))
-      .filter((e): e is NonNullable<typeof e> => !!e && !e.deleted_at);
-    return loadFromExercises(exs);
-  }, [featured, links, exMap]);
+  const featuredLoad = loadFromAreas(featured?.areas);
   const featuredCount = (links ?? []).filter((l) => l.plan_day_id === featured?.id).length;
 
   // Woche: Montag bis Sonntag
@@ -64,20 +56,14 @@ export function TodayPage() {
   const weekSessions = (sessions ?? []).filter((s) => Date.parse(s.started_at) >= weekStart.getTime());
 
   const weekLoad = useMemo(() => {
-    const ids = new Set(weekSessions.map((s) => s.id));
+    // Bereiche jeder Session, gewichtet mit ihren erledigten Arbeitssätzen.
     const counts = new Map<string, number>();
-    for (const s of doneSets ?? []) {
-      if (!ids.has(s.session_id) || s.kind === 'warmup') continue;
-      counts.set(s.exercise_id, (counts.get(s.exercise_id) ?? 0) + 1);
-    }
-    return loadFromSetCounts(
-      [...counts].map(([id, n]) => ({
-        primary_muscles: exMap?.get(id)?.primary_muscles ?? [],
-        secondary_muscles: exMap?.get(id)?.secondary_muscles ?? [],
-        sets: n,
-      })),
+    for (const s of doneSets ?? []) if (s.kind !== 'warmup') counts.set(s.session_id, (counts.get(s.session_id) ?? 0) + 1);
+    const dayById = new Map((days ?? []).map((d) => [d.id, d]));
+    return loadFromAreaCounts(
+      weekSessions.map((s) => ({ areas: sessionAreas(s, s.plan_day_id ? dayById.get(s.plan_day_id) : null), sets: counts.get(s.id) ?? 0 })),
     );
-  }, [weekSessions, doneSets, exMap]);
+  }, [weekSessions, doneSets, days]);
 
   const weekVolume = useMemo(() => {
     const ids = new Set(weekSessions.map((s) => s.id));
@@ -204,7 +190,7 @@ export function TodayPage() {
           </div>
 
           <div className="mt-4 flex items-center gap-4 border-t border-line/5 pt-4">
-            <BodyMap load={weekLoad} className="h-28 w-28 shrink-0" label="Diese Woche trainierte Muskeln" />
+            <BodyMap load={weekLoad} className="h-28 w-28 shrink-0" label="Diese Woche trainierte Bereiche" />
             <div className="grid flex-1 grid-cols-1 gap-2">
               <Stat label="Trainings" value={String(weekSessions.length)} />
               <Stat label="Zeit" value={weekDuration ? formatDuration(weekDuration) : '–'} />

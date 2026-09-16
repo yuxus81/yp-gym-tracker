@@ -6,7 +6,6 @@ import { Sheet } from '@/components/Sheet';
 import { Chip, Empty } from '@/components/ui';
 import { useAllDoneSets, useExerciseMap, useFinishedSessions } from '@/db/queries';
 import { formatKg, oneRepMax, setVolume } from '@/domain/calc';
-import { MUSCLES } from '@/domain/muscles';
 import type { Exercise } from '@/domain/types';
 
 interface Point {
@@ -102,7 +101,7 @@ export function ExerciseProgress() {
       </ul>
 
       <Sheet open={!!current} onClose={() => setOpen(null)} tall title={current?.ex.name}>
-        {current && <ExerciseDetail ex={current.ex} pts={current.pts} />}
+        {current && <ExerciseDetail pts={current.pts} />}
       </Sheet>
     </div>
   );
@@ -122,7 +121,7 @@ function Spark({ values }: { values: number[] }) {
   );
 }
 
-function ExerciseDetail({ ex, pts }: { ex: Exercise; pts: Point[] }) {
+function ExerciseDetail({ pts }: { pts: Point[] }) {
   const [metric, setMetric] = useState<Metric>('e1rm');
   const [sel, setSel] = useState<number | null>(null);
   const vals = pts.map((p) => p[metric]);
@@ -133,9 +132,7 @@ function ExerciseDetail({ ex, pts }: { ex: Exercise; pts: Point[] }) {
 
   return (
     <div className="pb-4">
-      <p className="text-center text-[13px] text-mute">{ex.primary_muscles.map((x) => MUSCLES[x]).join(', ')}</p>
-
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <div className="rounded-2xl bg-s2 p-3">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-dim">Bestes Max (geschätzt)</div>
           <div className="num text-[24px] font-bold">{formatKg(Math.round(best.e1rm * 10) / 10)} kg</div>

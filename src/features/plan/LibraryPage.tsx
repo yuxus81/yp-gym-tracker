@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/Icon';
 import { inputCls } from '@/components/ui';
 import { useExercises } from '@/db/queries';
-import { MUSCLES } from '@/domain/muscles';
 import type { Exercise } from '@/domain/types';
 import { ExerciseEditor } from './ExerciseEditor';
 
@@ -37,21 +36,21 @@ export function LibraryPage() {
           <input className={`${inputCls} pl-10`} type="search" placeholder="Suchen" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
-      <ul className="mx-4 divide-y divide-line/5 overflow-hidden rounded-2xl bg-s1 hairline">
+      <ul className={`mx-4 divide-y divide-line/5 overflow-hidden rounded-2xl bg-s1 hairline ${list.length ? '' : 'hidden'}`}>
         {list.map((e) => (
           <li key={e.id}>
             <button type="button" onClick={() => setEditing(e)} className="press flex min-h-[60px] w-full items-center gap-3 px-4 py-2 text-left active:bg-s2">
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{e.name}</span>
-                <span className="block truncate text-[13px] text-mute">
-                  {e.primary_muscles.map((m) => MUSCLES[m]).join(', ')} · {e.equipment}
-                </span>
-              </span>
+              <span className="min-w-0 flex-1 truncate font-medium">{e.name}</span>
               <Icon name="chevronRight" size={18} className="text-dim" />
             </button>
           </li>
         ))}
       </ul>
+      {exercises && list.length === 0 && (
+        <p className="px-8 py-10 text-center text-[15px] text-mute">
+          {exercises.length === 0 ? 'Noch keine Übungen. Tippe oben auf „Neu“ oder füge sie direkt in einem Trainingstag hinzu.' : 'Nichts gefunden.'}
+        </p>
+      )}
       <ExerciseEditor open={!!editing} exercise={editing} onClose={() => setEditing(null)} />
       <ExerciseEditor open={creating} initialName={q.trim()} onClose={() => setCreating(false)} />
     </div>

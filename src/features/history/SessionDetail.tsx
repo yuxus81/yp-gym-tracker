@@ -8,10 +8,10 @@ import { Icon } from '@/components/Icon';
 import { NumberPad } from '@/components/NumberPad';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, IconButton, Stepper } from '@/components/ui';
-import { useExerciseMap, useSession, useSessionSets } from '@/db/queries';
+import { useExerciseMap, usePlanDay, useSession, useSessionSets } from '@/db/queries';
 import { patch } from '@/db/repo';
 import { formatDuration, formatKg, formatVolume, setVolume } from '@/domain/calc';
-import { loadFromSetCounts } from '@/domain/muscles';
+import { loadFromAreas, sessionAreas } from '@/domain/muscles';
 import { DAY_COLORS, dayColor, SET_KINDS, type Session, type SessionSet } from '@/domain/types';
 import { useUi } from '@/store/ui';
 import { deleteSession } from '../session/actions';
@@ -22,6 +22,7 @@ export function SessionDetail() {
   const session = useSession(id);
   const sets = useSessionSets(id);
   const exMap = useExerciseMap();
+  const planDay = usePlanDay(session?.plan_day_id ?? undefined);
   const toast = useUi((s) => s.toast);
   const [edit, setEdit] = useState<SessionSet | null>(null);
   const [durOpen, setDurOpen] = useState(false);
@@ -54,13 +55,7 @@ export function SessionDetail() {
   const done = sets.filter((s) => s.done_at);
   const duration = session.ended_at ? Date.parse(session.ended_at) - Date.parse(session.started_at) : 0;
   const vol = done.reduce((a, s) => a + setVolume(s), 0);
-  const load = loadFromSetCounts(
-    grouped.map((g) => ({
-      primary_muscles: exMap?.get(g.exId)?.primary_muscles ?? [],
-      secondary_muscles: exMap?.get(g.exId)?.secondary_muscles ?? [],
-      sets: g.sets.filter((s) => s.kind !== 'warmup').length,
-    })),
-  );
+  const load = done.length ? loadFromAreas(sessionAreas(session, planDay)) : {};
 
   const del = async () => {
     const undo = await deleteSession(session.id);

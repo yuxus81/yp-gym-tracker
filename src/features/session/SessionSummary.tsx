@@ -4,9 +4,9 @@ import { BodyMap } from '@/components/BodyMap';
 import { Icon } from '@/components/Icon';
 import { Button } from '@/components/ui';
 import { db } from '@/db/dexie';
-import { useExerciseMap, useSession, useSessionSets } from '@/db/queries';
+import { useExerciseMap, usePlanDay, useSession, useSessionSets } from '@/db/queries';
 import { bestOneRepMax, formatDuration, formatKg, formatVolume, oneRepMax, setVolume } from '@/domain/calc';
-import { loadFromSetCounts } from '@/domain/muscles';
+import { loadFromAreas, sessionAreas } from '@/domain/muscles';
 import { DAY_COLORS } from '@/domain/types';
 
 /** Abschlussbildschirm nach „Beenden". */
@@ -14,6 +14,7 @@ export function SessionSummary({ id, onDone }: { id: string; onDone: () => void 
   const session = useSession(id);
   const sets = useSessionSets(id);
   const exMap = useExerciseMap();
+  const planDay = usePlanDay(session?.plan_day_id ?? undefined);
 
   // Rekorde: bester Satz je Übung schlägt alles davor
   const records = useLiveQuery(async () => {
@@ -49,12 +50,7 @@ export function SessionSummary({ id, onDone }: { id: string; onDone: () => void 
   const duration = session.ended_at ? Date.parse(session.ended_at) - Date.parse(session.started_at) : 0;
   const counts = new Map<string, number>();
   for (const s of done) if (s.kind !== 'warmup') counts.set(s.exercise_id, (counts.get(s.exercise_id) ?? 0) + 1);
-  const load = loadFromSetCounts(
-    [...counts].map(([exId, n]) => {
-      const ex = exMap?.get(exId);
-      return { primary_muscles: ex?.primary_muscles ?? [], secondary_muscles: ex?.secondary_muscles ?? [], sets: n };
-    }),
-  );
+  const load = counts.size ? loadFromAreas(sessionAreas(session, planDay)) : {};
   const tint = DAY_COLORS[session.color % DAY_COLORS.length].rgb;
 
   const stats = [

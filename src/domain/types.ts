@@ -1,5 +1,3 @@
-import type { MuscleId } from './muscles';
-
 /** Felder, die jede synchronisierte Zeile trägt. */
 export interface SyncRow {
   id: string;
@@ -9,12 +7,9 @@ export interface SyncRow {
   dirty: 0 | 1;
 }
 
+/** Übung: nur ein Name. Alte Zeilen tragen noch Muskel-/Pausenfelder mit – die App liest sie nicht mehr. */
 export interface Exercise extends SyncRow {
   name: string;
-  primary_muscles: MuscleId[];
-  secondary_muscles: MuscleId[];
-  equipment: string;
-  rest_sec: number;
   notes: string;
 }
 
@@ -26,6 +21,8 @@ export interface PlanDay extends SyncRow {
   sort: number;
   archived: boolean;
   notes: string;
+  /** Grobe Bereiche für die Körperfigur (IDs aus AREAS). Fehlt bei Zeilen von vor dem Umbau. */
+  areas?: string[];
 }
 
 export interface PlanDayExercise extends SyncRow {
@@ -33,9 +30,6 @@ export interface PlanDayExercise extends SyncRow {
   exercise_id: string;
   sort: number;
   target_sets: number;
-  reps_min: number;
-  reps_max: number;
-  rest_sec: number | null;
 }
 
 export interface Session extends SyncRow {
@@ -46,6 +40,8 @@ export interface Session extends SyncRow {
   started_at: string;
   ended_at: string | null;
   exercise_ids: string[];
+  /** Momentaufnahme der Bereiche des Plantags beim Start. */
+  areas?: string[];
   notes: string;
   energy: number | null;
   bodyweight: number | null;

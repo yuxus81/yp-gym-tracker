@@ -29,6 +29,15 @@ class GymDB extends Dexie {
       session_sets: 'id, dirty, session_id, exercise_id',
       meta: 'key',
     });
+    // Umbau 16.09.2026: Plantage und Sessions tragen grobe Körperbereiche.
+    this.version(2).stores({}).upgrade(async (tx) => {
+      await tx.table('plan_days').toCollection().modify((d) => {
+        d.areas ??= [];
+      });
+      await tx.table('sessions').toCollection().modify((s) => {
+        s.areas ??= [];
+      });
+    });
   }
 }
 

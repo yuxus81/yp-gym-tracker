@@ -1,7 +1,7 @@
 import { Reorder, useDragControls } from 'motion/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { BodyMap } from '@/components/BodyMap';
+import { AreaPicker } from '@/components/AreaPicker';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, IconButton, SectionTitle, Stepper } from '@/components/ui';
@@ -9,10 +9,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useExerciseMap, usePlanDay, usePlanDayExercises } from '@/db/queries';
 import { insertMany, patch, patchMany, remove } from '@/db/repo';
 import { db } from '@/db/dexie';
-import { loadFromExercises, MUSCLES } from '@/domain/muscles';
 import { DAY_COLORS, dayColor, WEEKDAYS, type Exercise, type PlanDay, type PlanDayExercise } from '@/domain/types';
 import { useUi } from '@/store/ui';
 import { ExercisePicker } from './ExercisePicker';
+
+export const NEW_DAY_NAME = 'Neuer Trainingstag';
 
 export function PlanDayEditor() {
   const { id } = useParams();
@@ -28,7 +29,8 @@ export function PlanDayEditor() {
   const [order, setOrder] = useState<string[]>([]);
 
   useEffect(() => {
-    if (day) setName(day.name);
+    // Neuer Tag: leeres Feld mit Platzhalter statt Standardnamen zum Wegtippen.
+    if (day) setName(params.get('neu') === '1' && day.name === NEW_DAY_NAME ? '' : day.name);
     // nur beim Laden des Tages übernehmen, nicht bei jedem Tippen
   }, [day?.id]);
 
@@ -36,11 +38,6 @@ export function PlanDayEditor() {
     if (links) setOrder(links.map((l) => l.id));
   }, [links]);
 
-  const exercises = useMemo(
-    () => (links ?? []).map((l) => exMap?.get(l.exercise_id)).filter((e): e is Exercise => !!e && !e.deleted_at),
-    [links, exMap],
-  );
-  const load = useMemo(() => loadFromExercises(exercises), [exercises]);
 
   if (day === null || (day && day.deleted_at)) {
     return (
@@ -61,7 +58,7 @@ export function PlanDayEditor() {
     const base = links.length;
     await insertMany<PlanDayExercise>(
       'plan_day_exercises',
-      ids.map((exId, i) => ({ plan_day_id: day.id, exercise_id: exId, sort: base + i, target_sets: 3, reps_min: 8, reps_max: 12, rest_sec: null })),
+      ids.map((exId, i) => ({ plan_day_id: day.id, exercise_id: exId, sort: base + i, target_sets: 3 })),
     );
   };
 
@@ -95,35 +92,18 @@ export function PlanDayEditor() {
           aria-label="Name des Trainingstags"
           value={name}
           autoFocus={params.get('neu') === '1'}
-          onFocus={(e) => params.get('neu') === '1' && e.currentTarget.select()}
           onChange={(e) => {
             setName(e.target.value);
-            set({ name: e.target.value.trim() || 'Trainingstag' });
+            set({ name: e.target.value.trim() || NEW_DAY_NAME });
           }}
           className="w-full bg-transparent text-[30px] font-bold tracking-tight outline-none placeholder:text-dim"
           style={{ fontSize: 30 }}
-          placeholder="Name, z. B. Schulter & Arme"
+          placeholder="Name, z. B. Rücken"
           enterKeyHint="done"
         />
 
-        <div className="mt-4 flex items-center gap-5 rounded-3xl bg-s1 p-4 hairline">
-          <BodyMap load={load} tint={tint} className="h-40 w-40 shrink-0" />
-          <div className="min-w-0 space-y-1">
-            {Object.keys(load).length === 0 ? (
-              <p className="text-[14px] text-mute">Füge Übungen hinzu — die Figur zeigt dann, welche Muskeln dieser Tag trifft.</p>
-            ) : (
-              Object.entries(load)
-                .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
-                .slice(0, 6)
-                .map(([m, v]) => (
-                  <div key={m} className="flex items-center gap-2 text-[13px]">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: `rgb(${tint} / ${v === 1 ? 1 : 0.45})` }} />
-                    <span className={v === 1 ? 'text-fg' : 'text-mute'}>{MUSCLES[m as keyof typeof MUSCLES]}</span>
-                  </div>
-                ))
-            )}
-          </div>
-        </div>
+        <SectionTitle>Bereiche</SectionTitle>
+        <AreaPicker value={day.areas ?? []} tint={tint} onChange={(areas) => set({ areas })} />
 
         <SectionTitle>Farbe</SectionTitle>
         <div className="flex gap-3">
@@ -213,9 +193,7 @@ function LinkRow({
         <span className="min-w-0">
           <span className="block truncate text-[16px] font-semibold">{exercise.name}</span>
           <span className="num block text-[13px] text-mute">
-            {link.target_sets} × {link.reps_min === link.reps_max ? link.reps_min : `${link.reps_min}–${link.reps_max}`} Wdh.
-            {' · '}
-            {Math.round((link.rest_sec ?? exercise.rest_sec) / 15) * 15}s Pause
+            {link.target_sets} {link.target_sets === 1 ? 'Satz' : 'Sätze'}
           </span>
         </span>
       </button>
@@ -270,19 +248,8 @@ function LinkSheet({ linkId, exercise, onClose }: { linkId: string | null; exerc
     >
       {l && (
         <div className="space-y-4 pt-2">
-          <Field label="Sätze">
+          <Field label="Sätze" hint="Wie viele Wiederholungen es werden, trägst du im Training ein.">
             <Stepper label="Sätze" value={l.target_sets} min={1} max={12} onChange={(v) => upd({ target_sets: v })} />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Wdh. von">
-              <Stepper label="Wiederholungen von" value={l.reps_min} min={1} max={50} onChange={(v) => upd({ reps_min: v, reps_max: Math.max(v, l.reps_max) })} />
-            </Field>
-            <Field label="bis">
-              <Stepper label="Wiederholungen bis" value={l.reps_max} min={1} max={50} onChange={(v) => upd({ reps_max: v, reps_min: Math.min(v, l.reps_min) })} />
-            </Field>
-          </div>
-          <Field label="Pause (Sekunden)" hint={l.rest_sec == null ? `Standard der Übung: ${exercise?.rest_sec ?? 90} s` : undefined}>
-            <Stepper label="Pause" value={l.rest_sec ?? exercise?.rest_sec ?? 90} min={15} max={600} step={15} onChange={(v) => upd({ rest_sec: v })} />
           </Field>
         </div>
       )}

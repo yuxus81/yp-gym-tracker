@@ -4,22 +4,22 @@ import { BodyMap } from '@/components/BodyMap';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/Sheet';
 import { Button, IconButton } from '@/components/ui';
-import { useExerciseMap, usePlanDayExercises, useSessionSets } from '@/db/queries';
+import { useExerciseMap, usePlanDay, usePlanDayExercises, useSessionSets } from '@/db/queries';
 import { patch } from '@/db/repo';
 import { formatClock } from '@/domain/calc';
-import { MUSCLES, type MuscleLoad } from '@/domain/muscles';
+import { loadFromAreas, sessionAreas } from '@/domain/muscles';
 import { DAY_COLORS, dayColor, type Session } from '@/domain/types';
 import { useNow } from '@/lib/hooks';
 import { useUi } from '@/store/ui';
 import { ExercisePicker } from '../plan/ExercisePicker';
 import { addExerciseToSession, discardSession, finishSession, moveExercise, removeExerciseFromSession } from './actions';
 import { ExerciseLogger } from './ExerciseLogger';
-import { RestBar } from './RestBar';
 
 export function SessionScreen({ session }: { session: Session }) {
-  const { closeSession, setSummary, stopRest } = useUi();
+  const { closeSession, setSummary } = useUi();
   const exMap = useExerciseMap();
   const links = usePlanDayExercises(session.plan_day_id ?? undefined);
+  const planDay = usePlanDay(session.plan_day_id ?? undefined);
   const sets = useSessionSets(session.id);
   const now = useNow(1000);
   const [openEx, setOpenEx] = useState<string | null>(null);
@@ -42,29 +42,18 @@ export function SessionScreen({ session }: { session: Session }) {
     return m;
   }, [sets]);
 
-  // Geplante Muskeln schwach, bereits trainierte voll.
-  const load = useMemo(() => {
-    const l: MuscleLoad = {};
-    for (const id of session.exercise_ids) {
-      const ex = exMap?.get(id);
-      if (!ex) continue;
-      const started = (progress.get(id)?.done ?? 0) > 0;
-      for (const m of ex.primary_muscles) l[m] = Math.max(l[m] ?? 0, started ? 1 : 0.08);
-      for (const m of ex.secondary_muscles) l[m] = Math.max(l[m] ?? 0, started ? 0.5 : 0.04);
-    }
-    return l;
-  }, [session.exercise_ids, exMap, progress]);
-
   const doneSets = (sets ?? []).filter((s) => s.done_at && s.kind !== 'warmup').length;
   // Noch nicht geöffnete Übungen zählen mit ihrem Plan-Ziel
   const totalSets = session.exercise_ids.reduce((a, id) => a + (progress.get(id)?.total ?? linkByEx.get(id)?.target_sets ?? 0), 0);
+  // Die Bereiche füllen sich mit dem Fortschritt: blass am Anfang, voll bei allen Sätzen.
+  const areas = sessionAreas(session, planDay);
+  const load = loadFromAreas(areas, 0.1 + 0.9 * (totalSets ? Math.min(1, doneSets / totalSets) : 0));
   const exercise = openEx ? exMap?.get(openEx) : undefined;
   const link = openEx ? linkByEx.get(openEx) : undefined;
   const menuEx = menuFor ? exMap?.get(menuFor) : undefined;
 
   const finish = async () => {
     await finishSession(session);
-    stopRest();
     setFinishing(false);
     setOpenEx(null);
     setSummary(session.id);
@@ -72,7 +61,6 @@ export function SessionScreen({ session }: { session: Session }) {
 
   const discard = async () => {
     await discardSession(session);
-    stopRest();
     setFinishing(false);
     closeSession();
   };
@@ -103,7 +91,7 @@ export function SessionScreen({ session }: { session: Session }) {
         </div>
       </div>
 
-      <div className="scroller relative min-h-0 flex-1">
+      <div className="scroller relative min-h-0 flex-1" style={{ paddingBottom: 'var(--safe-bottom)' }}>
         <AnimatePresence mode="popLayout" initial={false}>
           {exercise ? (
             <motion.div
@@ -117,8 +105,7 @@ export function SessionScreen({ session }: { session: Session }) {
               <ExerciseLogger
                 session={session}
                 exercise={exercise}
-                target={link ? { sets: link.target_sets, min: link.reps_min, max: link.reps_max } : undefined}
-                restSec={link?.rest_sec ?? exercise.rest_sec}
+                targetSets={link?.target_sets}
               />
               <NextUp session={session} current={exercise.id} names={exMap} onOpen={setOpenEx} />
             </motion.div>
@@ -191,7 +178,7 @@ export function SessionScreen({ session }: { session: Session }) {
                                 />
                               ))}
                             </span>
-                            <span className="truncate text-[12px] text-mute">{ex.primary_muscles.map((m) => MUSCLES[m]).join(', ')}</span>
+                            <span className="num truncate text-[12px] text-mute">{total ? `${done}/${total} Sätze` : 'Noch keine Sätze'}</span>
                           </span>
                         </span>
                       </button>
@@ -209,9 +196,6 @@ export function SessionScreen({ session }: { session: Session }) {
         </AnimatePresence>
       </div>
 
-      <div className="shrink-0 px-3 pt-2" style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}>
-        <RestBar />
-      </div>
 
       <ExercisePicker
         open={picking}

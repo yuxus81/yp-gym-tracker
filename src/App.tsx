@@ -27,7 +27,7 @@ function TabBar() {
   const { setStartOpen, openSession } = useUi();
   const { pathname } = useLocation();
   // Die Tippflächen reichen bis zum unteren Rand; der Inhalt sitzt über dem Home-Balken.
-  const item = 'press relative flex items-center justify-center gap-1.5 pb-[var(--tabbar-pad)]';
+  const item = 'press relative flex items-center justify-center gap-2 pb-[var(--tabbar-pad)]';
   return (
     <nav className="shrink-0 border-t border-line/[0.06] bg-bg/95 backdrop-blur" aria-label="Hauptnavigation">
       <div className="grid grid-cols-3" style={{ height: 'calc(var(--tabbar-h) + var(--tabbar-pad))' }}>
@@ -41,10 +41,10 @@ function TabBar() {
                 return (
                   <>
                     {isActive && (
-                      <motion.span layoutId="tab-dot" className="absolute top-0 h-[2px] w-8 rounded-b-full bg-acc" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />
+                      <motion.span layoutId="tab-dot" className="absolute top-0 h-[3px] w-10 rounded-b-full bg-acc" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />
                     )}
-                    <Icon name={t.icon} size={18} strokeWidth={isActive ? 2.3 : 1.9} className={isActive ? 'text-fg' : 'text-dim'} />
-                    <span className={`text-[12px] font-semibold ${isActive ? 'text-fg' : 'text-dim'}`}>{t.label}</span>
+                    <Icon name={t.icon} size={24} strokeWidth={isActive ? 2.3 : 1.9} className={isActive ? 'text-fg' : 'text-dim'} />
+                    <span className={`text-[15px] font-semibold ${isActive ? 'text-fg' : 'text-dim'}`}>{t.label}</span>
                   </>
                 );
               }}
@@ -61,9 +61,9 @@ function TrainingTab({ onStart, onOpen, className }: { onStart: () => void; onOp
   const hasActive = useActiveFlag();
   return (
     <button type="button" onClick={hasActive ? onOpen : onStart} className={className} aria-label={hasActive ? 'Laufendes Training öffnen' : 'Training starten'}>
-      <span className="flex h-[26px] items-center gap-1 rounded-full bg-acc pl-2 pr-2.5 text-onacc">
-        <Icon name={hasActive ? 'timer' : 'plus'} size={16} strokeWidth={2.8} />
-        <span className="text-[12px] font-bold">{hasActive ? 'Läuft' : 'Training'}</span>
+      <span className="flex h-10 items-center gap-1.5 rounded-full bg-acc pl-3 pr-4 text-onacc">
+        <Icon name={hasActive ? 'timer' : 'plus'} size={20} strokeWidth={2.8} />
+        <span className="text-[15px] font-bold">{hasActive ? 'Läuft' : 'Training'}</span>
       </span>
     </button>
   );

@@ -45,7 +45,7 @@ const NEUTRAL_HALF = [
   'M35.4 189.4 L39.2 189.4 C40.6 192 41 195 40.4 197 L33.4 197 C33.4 194.4 34.2 191.6 35.4 189.4 Z',
 ];
 
-function Figure({ parts, load, tint, delayBase }: { parts: Part[]; load: MuscleLoad; tint: string; delayBase: number }) {
+function Figure({ parts, load, tint, delayBase, onPart }: { parts: Part[]; load: MuscleLoad; tint: string; delayBase: number; onPart?: (m: MuscleId) => void }) {
   const render = (flip: boolean) =>
     parts.map((p, i) => {
       const v = load[p.m] ?? 0;
@@ -54,7 +54,9 @@ function Figure({ parts, load, tint, delayBase }: { parts: Part[]; load: MuscleL
         <path
           key={`${flip ? 'r' : 'l'}-${i}`}
           d={p.d}
+          onClick={onPart ? () => onPart(p.m) : undefined}
           style={{
+            cursor: onPart ? 'pointer' : undefined,
             fill,
             transition: 'fill 420ms cubic-bezier(.2,.8,.2,1)',
             transitionDelay: `${delayBase + i * 28}ms`,
@@ -88,12 +90,15 @@ export const BodyMap = memo(function BodyMap({
   tint = 'var(--acc)',
   className = '',
   label,
+  onPart,
 }: {
   load: MuscleLoad;
   /** RGB-Tripel, z. B. "232 120 92" oder "var(--acc)" */
   tint?: string;
   className?: string;
   label?: string;
+  /** Macht die Figur antippbar (Bereiche auswählen). */
+  onPart?: (m: MuscleId) => void;
 }) {
   const names = Object.keys(load).length;
   return (
@@ -101,11 +106,11 @@ export const BodyMap = memo(function BodyMap({
       viewBox="0 0 210 202"
       className={className}
       role="img"
-      aria-label={label ?? (names ? `Muskelfigur, ${names} Muskelgruppen markiert` : 'Muskelfigur')}
+      aria-label={label ?? (names ? `Körperfigur, ${names} Regionen markiert` : 'Körperfigur')}
     >
-      <Figure parts={FRONT} load={load} tint={tint} delayBase={0} />
+      <Figure parts={FRONT} load={load} tint={tint} delayBase={0} onPart={onPart} />
       <g transform="translate(110 0)">
-        <Figure parts={BACK} load={load} tint={tint} delayBase={120} />
+        <Figure parts={BACK} load={load} tint={tint} delayBase={120} onPart={onPart} />
       </g>
     </svg>
   );

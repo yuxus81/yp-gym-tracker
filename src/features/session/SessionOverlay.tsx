@@ -5,7 +5,6 @@ import { formatClock } from '@/domain/calc';
 import { dayColor } from '@/domain/types';
 import { useNow, useWakeLock } from '@/lib/hooks';
 import { useUi } from '@/store/ui';
-import { RestBar } from './RestBar';
 import { SessionScreen } from './SessionScreen';
 import { SessionSummary } from './SessionSummary';
 import { StartSheet } from './StartSheet';
@@ -52,7 +51,7 @@ export function SessionOverlay() {
 /** Leiste über der Tab-Bar, solange eine Session im Hintergrund läuft. */
 export function MiniSessionBar() {
   const active = useActiveSession();
-  const { sessionOpen, openSession, rest } = useUi();
+  const { sessionOpen, openSession } = useUi();
   const now = useNow(1000, !!active);
   const visible = !!active && !sessionOpen;
 
@@ -64,9 +63,8 @@ export function MiniSessionBar() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 20, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 460, damping: 36 }}
-          className="space-y-2 px-3 pb-2"
+          className="px-3 pb-2"
         >
-          {rest && <RestBar compact />}
           <button
             type="button"
             onClick={openSession}

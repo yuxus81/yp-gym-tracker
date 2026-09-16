@@ -8,7 +8,6 @@ import { Button } from '@/components/ui';
 import { useLastSets, useSessionSets } from '@/db/queries';
 import { patch, remove } from '@/db/repo';
 import { formatKg, suggestDrop } from '@/domain/calc';
-import { MUSCLES } from '@/domain/muscles';
 import { SET_KINDS, type Exercise, type Session, type SessionSet, type SetKind } from '@/domain/types';
 import { haptic, playRecord, unlockAudio } from '@/lib/sound';
 import { useUi } from '@/store/ui';
@@ -26,17 +25,15 @@ const KIND_STYLE: Record<SetKind, string> = {
 export function ExerciseLogger({
   session,
   exercise,
-  target,
-  restSec,
+  targetSets,
 }: {
   session: Session;
   exercise: Exercise;
-  target?: { sets: number; min: number; max: number };
-  restSec: number;
+  targetSets?: number;
 }) {
   const allSets = useSessionSets(session.id);
   const last = useLastSets(exercise.id, session.id);
-  const { toast, startRest } = useUi();
+  const { toast } = useUi();
   const [pad, setPad] = useState<PadTarget>(null);
   const [kindFor, setKindFor] = useState<SessionSet | null>(null);
   const [recordIds, setRecordIds] = useState<string[]>([]);
@@ -68,7 +65,6 @@ export function ExerciseLogger({
       return;
     }
     const isRecord = await completeSet(s, ghostFor(i));
-    startRest(restSec, exercise.name);
     if (isRecord) {
       setRecordIds((r) => [...r, s.id]);
       playRecord();
@@ -115,17 +111,11 @@ export function ExerciseLogger({
     <div className="pb-6">
       <div className="px-5">
         <h2 className="text-[26px] font-bold leading-tight tracking-tight">{exercise.name}</h2>
-        <p className="mt-1 text-[14px] text-mute">
-          {exercise.primary_muscles.map((m) => MUSCLES[m]).join(', ')}
-          {target && (
-            <>
-              {' · Ziel '}
-              <span className="num">
-                {target.sets} × {target.min === target.max ? target.min : `${target.min}–${target.max}`}
-              </span>
-            </>
-          )}
-        </p>
+        {targetSets != null && (
+          <p className="num mt-1 text-[14px] text-mute">
+            Ziel {targetSets} {targetSets === 1 ? 'Satz' : 'Sätze'}
+          </p>
+        )}
 
         {lastSummary.length > 0 && (
           <div className="scroller -mx-5 mt-3 flex items-center gap-2 overflow-x-auto px-5 text-[13px]">

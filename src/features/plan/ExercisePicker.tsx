@@ -1,23 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Sheet } from '@/components/Sheet';
 import { Icon } from '@/components/Icon';
-import { Button, Chip, inputCls } from '@/components/ui';
+import { Button, inputCls } from '@/components/ui';
 import { useExercises } from '@/db/queries';
-import { MUSCLE_GROUPS, MUSCLES } from '@/domain/muscles';
+import { insert } from '@/db/repo';
 import type { Exercise } from '@/domain/types';
-import { ExerciseEditor } from './ExerciseEditor';
+import { ExerciseEditor, findByName } from './ExerciseEditor';
 
-const GROUP_FILTERS = [
-  { label: 'Alle', ids: [] as string[] },
-  { label: 'Brust', ids: ['chest'] },
-  { label: 'Rücken', ids: ['lats', 'upper_back', 'lower_back', 'traps'] },
-  { label: 'Schultern', ids: ['front_delts', 'side_delts', 'rear_delts'] },
-  { label: 'Arme', ids: ['biceps', 'triceps', 'forearms'] },
-  { label: 'Beine', ids: MUSCLE_GROUPS[3].ids as string[] },
-  { label: 'Rumpf', ids: ['abs', 'obliques'] },
-];
-
-/** Übungsauswahl mit Suche, Muskelfilter und Mehrfachauswahl. */
+/** Eigene Übungen auswählen oder direkt per Namen neu anlegen (Mehrfachauswahl). */
 export function ExercisePicker({
   open,
   onClose,
@@ -33,7 +23,6 @@ export function ExercisePicker({
 }) {
   const exercises = useExercises();
   const [q, setQ] = useState('');
-  const [group, setGroup] = useState(0);
   const [picked, setPicked] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Exercise | null>(null);
@@ -47,14 +36,21 @@ export function ExercisePicker({
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const ids = GROUP_FILTERS[group].ids;
-    return (exercises ?? []).filter(
-      (e) =>
-        !exclude.includes(e.id) &&
-        (!needle || e.name.toLowerCase().includes(needle)) &&
-        (ids.length === 0 || e.primary_muscles.some((m) => ids.includes(m))),
-    );
-  }, [exercises, q, group, exclude]);
+    return (exercises ?? []).filter((e) => !exclude.includes(e.id) && (!needle || e.name.toLowerCase().includes(needle)));
+  }, [exercises, q, exclude]);
+
+  const typed = q.trim();
+  const exact = (exercises ?? []).find((e) => e.name.trim().toLowerCase() === typed.toLowerCase());
+
+  // Mit Suchtext: sofort anlegen und auswählen. Ohne: Namensfeld öffnen.
+  const create = async () => {
+    if (!typed) return setCreating(true);
+    // Feld sofort leeren: Weitertippen darf nicht an den gerade gespeicherten Namen angehängt werden.
+    setQ('');
+    // In der Datenbank nachsehen, nicht nur in der Liste – die hinkt bei schnellem Tippen hinterher.
+    const ex = exact ?? (await findByName(typed)) ?? (await insert<Exercise>('exercises', { name: typed, notes: '' }));
+    if (!exclude.includes(ex.id)) setPicked((p) => (p.includes(ex.id) ? p : [...p, ex.id]));
+  };
 
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
@@ -86,29 +82,30 @@ export function ExercisePicker({
             <input
               className={`${inputCls} pl-10`}
               type="search"
-              placeholder="Übung suchen"
+              placeholder={exercises?.length ? 'Suchen oder neuen Namen tippen' : 'Name der Übung, z. B. Latzug'}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              enterKeyHint="search"
+              enterKeyHint="done"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && typed) {
+                  e.preventDefault();
+                  void create();
+                }
+              }}
               autoComplete="off"
             />
-          </div>
-          <div className="scroller -mx-5 mt-2 flex gap-2 overflow-x-auto px-5">
-            {GROUP_FILTERS.map((g, i) => (
-              <Chip key={g.label} active={group === i} onClick={() => setGroup(i)}>
-                {g.label}
-              </Chip>
-            ))}
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => setCreating(true)}
+          onClick={create}
           className="press mb-2 mt-1 flex h-14 w-full items-center gap-3 rounded-2xl border border-dashed border-line/15 px-4 text-left text-acc"
         >
           <Icon name="plus" size={20} />
-          <span className="font-semibold">{q.trim() ? `„${q.trim()}“ neu anlegen` : 'Neue Übung anlegen'}</span>
+          <span className="min-w-0 truncate font-semibold">
+            {!typed ? 'Neue Übung anlegen' : !exact ? `„${typed}“ anlegen` : exclude.includes(exact.id) ? `„${exact.name}“ ist schon drin` : `„${exact.name}“ auswählen`}
+          </span>
         </button>
 
         <ul className="divide-y divide-line/5">
@@ -124,9 +121,6 @@ export function ExercisePicker({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-[16px] font-medium">{e.name}</span>
-                    <span className="block truncate text-[13px] text-mute">
-                      {e.primary_muscles.map((m) => MUSCLES[m]).join(', ')} · {e.equipment}
-                    </span>
                   </span>
                 </button>
                 <button type="button" aria-label={`${e.name} bearbeiten`} onClick={() => setEditing(e)} className="press grid h-11 w-11 place-items-center text-dim">
@@ -136,7 +130,11 @@ export function ExercisePicker({
             );
           })}
         </ul>
-        {exercises && list.length === 0 && <p className="py-8 text-center text-[15px] text-mute">Nichts gefunden.</p>}
+        {exercises && list.length === 0 && (
+          <p className="py-8 text-center text-[15px] text-mute">
+            {exercises.length === 0 ? 'Noch keine Übungen. Tippe oben einen Namen ein.' : typed ? 'Keine passende Übung.' : 'Alle Übungen sind schon drin.'}
+          </p>
+        )}
       </Sheet>
 
       <ExerciseEditor

@@ -21,6 +21,7 @@ export async function startSession(day: PlanDay | null): Promise<Session> {
     started_at: nowIso(),
     ended_at: null,
     exercise_ids: exerciseIds,
+    areas: day?.areas ?? [],
     notes: '',
     energy: null,
     bodyweight: null,

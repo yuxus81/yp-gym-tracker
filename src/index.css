@@ -21,9 +21,9 @@
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* Flache Leiste: Symbol und Text nebeneinander. Unten nur so viel Abstand, dass der
-     Inhalt knapp über dem Home-Balken sitzt (iPhone: 34 − 28 = 6 px). */
-  --tabbar-h: 32px;
+  /* Flache Leiste: Symbol und Text nebeneinander, Tippflächen 48 px (Apple: mind. 44).
+     Unten nur so viel Abstand, dass der Inhalt knapp über dem Home-Balken sitzt (iPhone: 34 − 28 = 6 px). */
+  --tabbar-h: 48px;
   --tabbar-pad: max(6px, calc(env(safe-area-inset-bottom, 0px) - 28px));
 
   color-scheme: dark;

@@ -17,7 +17,7 @@ Trainings-Tracker fürs iPhone als Web-App (PWA). Trainingsplan, Session-Logging
 
 ## Einrichtung
 
-1. Supabase-Projekt anlegen, `supabase/schema.sql` im SQL-Editor ausführen.
+1. Supabase-Projekt anlegen, `supabase/schema.sql` im SQL-Editor ausführen (bestehende Datenbank: zusätzlich die Dateien `supabase/20*.sql` in Datumsreihenfolge).
 2. Authentication → Users → eigenes Konto anlegen (E-Mail + Passwort).
 3. Authentication → Sign In / Providers → **„Allow new users to sign up“ ausschalten.**
 4. `.env.example` nach `.env.local` kopieren, URL + Publishable Key eintragen.

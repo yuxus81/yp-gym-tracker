@@ -25,8 +25,7 @@ Trainings-Tracker fürs iPhone als Web-App (PWA). Trainingsplan, Session-Logging
 
 ## Deploy (GitHub Pages)
 
-- Repo → Settings → Secrets and variables → Actions → **Variables**:
-  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- Supabase-URL und Publishable Key stehen direkt in `.github/workflows/deploy.yml` (öffentlich gedacht, Schutz per RLS).
 - Settings → Pages → Source: GitHub Actions. Jeder Push auf `main` baut und veröffentlicht.
 - `keep-alive.yml` pingt Supabase alle 5 Tage (Free-Tier pausiert sonst nach 7 Tagen).
 

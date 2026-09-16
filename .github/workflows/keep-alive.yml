@@ -19,8 +19,8 @@ jobs:
       - name: Ping Supabase REST API
         run: |
           curl -s -o /dev/null -w "Supabase-Ping: HTTP %{http_code}\n" \
-            "${{ vars.VITE_SUPABASE_URL }}/rest/v1/exercises?select=id&limit=1" \
-            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}"
+            "https://ecbzomjrntblzlljwntj.supabase.co/rest/v1/exercises?select=id&limit=1" \
+            -H "apikey: sb_publishable_TzYZDdliW-BCs3yPLQsv5A_YehiB-7j"
 
       - uses: actions/checkout@v4
 

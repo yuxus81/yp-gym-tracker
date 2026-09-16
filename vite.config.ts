@@ -40,6 +40,10 @@ export default defineConfig({
         // Nur lateinische Schriftschnitte vorhalten — spart ~500 KB beim ersten Laden.
         globIgnores: ['**/*cyrillic*', '**/*greek*', '**/*vietnamese*'],
         cleanupOutdatedCaches: true,
+        // Neue Version sofort übernehmen statt zu warten, bis jedes App-Fenster zu ist.
+        // (Wegen injectRegister: false setzt das Plugin das nicht von selbst.)
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: { enabled: false },
     }),

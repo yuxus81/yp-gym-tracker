@@ -23,9 +23,9 @@ export function LibraryPage() {
     <div className="pb-8">
       <div className="sticky top-0 z-10 bg-bg/95 px-2 pb-2 backdrop-blur">
         <div className="flex items-center justify-between py-1">
-          <button type="button" onClick={() => nav('/plan')} className="press flex h-11 items-center gap-0.5 pr-3 text-acc">
+          <button type="button" onClick={() => nav('/')} className="press flex h-11 items-center gap-0.5 pr-3 text-acc">
             <Icon name="chevronLeft" size={26} />
-            <span className="text-[17px]">Plan</span>
+            <span className="text-[17px]">Home</span>
           </button>
           <button type="button" onClick={() => setCreating(true)} className="press flex h-11 items-center gap-1 px-3 font-semibold text-acc">
             <Icon name="plus" size={20} /> Neu

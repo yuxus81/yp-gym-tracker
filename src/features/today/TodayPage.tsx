@@ -13,6 +13,7 @@ import { formatDuration, formatVolume, setVolume, weekdayIndex } from '@/domain/
 import { loadFromExercises, loadFromSetCounts } from '@/domain/muscles';
 import { DAY_COLORS, dayColor } from '@/domain/types';
 import { useUi } from '@/store/ui';
+import { PlanSection } from '../plan/PlanPage';
 import { SettingsSheet } from '../settings/SettingsSheet';
 
 function greeting(d: Date) {
@@ -151,7 +152,7 @@ export function TodayPage() {
                 Weiter trainieren
               </Button>
             ) : days?.length === 0 ? (
-              <Button variant="primary" size="lg" icon="plan" className="w-full" onClick={() => nav('/plan')}>
+              <Button variant="primary" size="lg" icon="plan" className="w-full" onClick={() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth' })}>
                 Plan anlegen
               </Button>
             ) : (
@@ -233,6 +234,8 @@ export function TodayPage() {
           </>
         )}
       </div>
+
+      <PlanSection />
 
       <SettingsSheet open={settings} onClose={() => setSettings(false)} />
     </div>

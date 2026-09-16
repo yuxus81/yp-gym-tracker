@@ -8,7 +8,6 @@ import { HistoryPage } from '@/features/history/HistoryPage';
 import { SessionDetail } from '@/features/history/SessionDetail';
 import { LibraryPage } from '@/features/plan/LibraryPage';
 import { PlanDayEditor } from '@/features/plan/PlanDayEditor';
-import { PlanPage } from '@/features/plan/PlanPage';
 import { MiniSessionBar, SessionOverlay } from '@/features/session/SessionOverlay';
 import { TodayPage } from '@/features/today/TodayPage';
 import { isIos, isStandalone } from '@/lib/hooks';
@@ -16,23 +15,28 @@ import { useAuth } from '@/store/auth';
 import { useUi } from '@/store/ui';
 
 const TABS: { to: string; label: string; icon: IconName }[] = [
-  { to: '/', label: 'Heute', icon: 'today' },
-  { to: '/plan', label: 'Plan', icon: 'plan' },
+  { to: '/', label: 'Home', icon: 'home' },
   { to: '/training', label: 'Training', icon: 'dumbbell' },
   { to: '/verlauf', label: 'Verlauf', icon: 'history' },
 ];
 
+/** Plantage und Bibliothek sind Unterseiten von Home. */
+const HOME_PATHS = /^\/($|plan|bibliothek)/;
+
 function TabBar() {
   const { setStartOpen, openSession } = useUi();
+  const { pathname } = useLocation();
   return (
     <nav className="shrink-0 border-t border-line/[0.06] bg-bg/95 backdrop-blur" style={{ paddingBottom: 'var(--safe-bottom)' }} aria-label="Hauptnavigation">
-      <div className="grid h-[var(--tabbar-h)] grid-cols-4">
+      <div className="grid h-[var(--tabbar-h)] grid-cols-3">
         {TABS.map((t) =>
           t.to === '/training' ? (
             <TrainingTab key={t.to} onStart={() => setStartOpen(true)} onOpen={openSession} />
           ) : (
             <NavLink key={t.to} to={t.to} end={t.to === '/'} className="press relative flex flex-col items-center justify-center gap-0.5">
-              {({ isActive }) => (
+              {({ isActive: exact }) => {
+                const isActive = t.to === '/' ? HOME_PATHS.test(pathname) : exact;
+                return (
                 <>
                   {isActive && (
                     <motion.span layoutId="tab-dot" className="absolute top-1.5 h-1 w-5 rounded-full bg-acc" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />
@@ -40,7 +44,8 @@ function TabBar() {
                   <Icon name={t.icon} size={24} strokeWidth={isActive ? 2.3 : 1.8} className={isActive ? 'text-fg' : 'text-dim'} />
                   <span className={`text-[11px] font-semibold ${isActive ? 'text-fg' : 'text-dim'}`}>{t.label}</span>
                 </>
-              )}
+                );
+              }}
             </NavLink>
           ),
         )}
@@ -168,7 +173,7 @@ function Pages() {
         >
           <Routes location={loc}>
             <Route path="/" element={<TodayPage />} />
-            <Route path="/plan" element={<PlanPage />} />
+            <Route path="/plan" element={<Navigate to="/" replace />} />
             <Route path="/plan/:id" element={<PlanDayEditor />} />
             <Route path="/bibliothek" element={<LibraryPage />} />
             <Route path="/verlauf" element={<HistoryPage />} />

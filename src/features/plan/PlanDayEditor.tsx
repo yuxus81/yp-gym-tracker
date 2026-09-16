@@ -47,7 +47,7 @@ export function PlanDayEditor() {
       <div className="p-6 text-center text-mute">
         Trainingstag nicht gefunden.
         <div className="mt-4">
-          <Button onClick={() => nav('/plan')}>Zurück zum Plan</Button>
+          <Button onClick={() => nav('/')}>Zurück zu Home</Button>
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export function PlanDayEditor() {
   const deleteDay = async () => {
     await remove('plan_days', day.id);
     toast({ text: `„${day.name}“ gelöscht`, action: { label: 'Rückgängig', run: () => void patch('plan_days', day.id, { deleted_at: null } as never) } });
-    nav('/plan', { replace: true });
+    nav('/', { replace: true });
   };
 
   const byId = new Map(links.map((l) => [l.id, l]));
@@ -83,9 +83,9 @@ export function PlanDayEditor() {
   return (
     <div className="pb-10">
       <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/95 px-2 py-1 backdrop-blur">
-        <button type="button" onClick={() => nav('/plan')} className="press flex h-11 items-center gap-0.5 pr-3 text-acc">
+        <button type="button" onClick={() => nav('/')} className="press flex h-11 items-center gap-0.5 pr-3 text-acc">
           <Icon name="chevronLeft" size={26} />
-          <span className="text-[17px]">Plan</span>
+          <span className="text-[17px]">Home</span>
         </button>
         <IconButton icon="trash" label="Trainingstag löschen" className="text-bad" onClick={deleteDay} />
       </div>

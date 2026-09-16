@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BodyMap } from '@/components/BodyMap';
 import { Icon } from '@/components/Icon';
-import { Button, Empty, PageHeader, SectionTitle } from '@/components/ui';
+import { Button, Empty, SectionTitle } from '@/components/ui';
 import { useAllPlanLinks, useExerciseMap, useExercises, usePlanDays } from '@/db/queries';
 import { insert } from '@/db/repo';
 import { createSamplePlan } from '@/data/seed';
@@ -11,7 +11,8 @@ import { loadFromExercises } from '@/domain/muscles';
 import { dayColor, DAY_COLORS, WEEKDAYS, type PlanDay } from '@/domain/types';
 import { weekdayIndex } from '@/domain/calc';
 
-export function PlanPage() {
+/** Trainingsplan als Abschnitt der Home-Seite (weiter unten beim Scrollen). */
+export function PlanSection() {
   const days = usePlanDays();
   const links = useAllPlanLinks();
   const exMap = useExerciseMap();
@@ -49,18 +50,19 @@ export function PlanPage() {
   };
 
   return (
-    <div className="pb-6">
-      <PageHeader
-        title="Plan"
-        sub={days ? `${days.length} Trainingstage` : ' '}
-        right={
-          <button type="button" onClick={addDay} aria-label="Trainingstag hinzufügen" className="press grid h-11 w-11 place-items-center rounded-full bg-acc text-onacc">
-            <Icon name="plus" size={24} strokeWidth={2.5} />
-          </button>
-        }
-      />
-
+    <section id="plan" className="scroll-mt-4 pb-6">
       <div className="px-4">
+        <SectionTitle
+          right={
+            days && days.length > 0 ? (
+              <button type="button" onClick={addDay} className="press -my-2 flex h-11 items-center gap-1 px-1 text-[14px] font-semibold text-acc">
+                <Icon name="plus" size={18} strokeWidth={2.5} /> Tag
+              </button>
+            ) : undefined
+          }
+        >
+          {days?.length ? `Mein Plan · ${days.length} ${days.length === 1 ? 'Tag' : 'Tage'}` : 'Mein Plan'}
+        </SectionTitle>
         {days && days.length === 0 && (
           <Empty
             icon="plan"
@@ -132,8 +134,7 @@ export function PlanPage() {
 
         {days && days.length > 0 && (
           <>
-            <SectionTitle>Bibliothek</SectionTitle>
-            <button type="button" onClick={() => nav('/bibliothek')} className="press flex h-14 w-full items-center gap-3 rounded-2xl bg-s1 px-4 text-left hairline">
+            <button type="button" onClick={() => nav('/bibliothek')} className="press mt-3 flex h-14 w-full items-center gap-3 rounded-2xl bg-s1 px-4 text-left hairline">
               <Icon name="dumbbell" className="text-mute" />
               <span className="flex-1 font-medium">Alle Übungen</span>
               <span className="num text-mute">{exercises?.length ?? ''}</span>
@@ -142,6 +143,6 @@ export function PlanPage() {
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 }

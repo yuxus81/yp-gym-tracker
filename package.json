@@ -1,0 +1,44 @@
+{
+  "name": "yp-gym-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "YP Gym Tracker — Trainings-Tracker fürs Handy, offline-fest, Supabase-Sync.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@supabase/supabase-js": "^2.116.0",
+    "date-fns": "^4.4.0",
+    "dexie": "^4.4.6",
+    "dexie-react-hooks": "^4.4.0",
+    "motion": "^13.4.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "fake-indexeddb": "^6.2.5",
+    "postcss": "^8.5.28",
+    "sharp": "^0.35.4",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^2.1.9"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}

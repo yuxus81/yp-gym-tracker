@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="s" x1="0" y1="400" x2="0" y2="870" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4f4f4"/>
+      <stop offset="0.55" stop-color="#c9c9cb"/>
+      <stop offset="1" stop-color="#8d8d91"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0c0c0d"/>
+  <!-- Logo 880×470 auf 400 px Breite skaliert und mittig gesetzt -->
+  <g transform="translate(56 149.2) scale(0.4545) translate(-200 -400)" fill="url(#s)">
+    <path d="M282 420H378L538 580V848L465 800V603Z"/>
+    <path fill-rule="evenodd" d="M603 420H870A121.5 121.5 0 0 1 870 663H700L650 713V790L578 848V580L521 523ZM660 490V592H870A51 51 0 0 0 870 490Z"/>
+    <rect x="362" y="633" width="85" height="34" rx="4"/>
+    <rect x="683" y="660" width="262" height="30" rx="4"/>
+    <rect x="220" y="610" width="30" height="80" rx="7"/>
+    <rect x="265" y="567" width="33" height="160" rx="7"/>
+    <rect x="312" y="548" width="36" height="202" rx="7"/>
+    <rect x="958" y="565" width="36" height="185" rx="7"/>
+    <rect x="1005" y="590" width="30" height="137" rx="7"/>
+    <rect x="1045" y="623" width="16" height="67" rx="7"/>
+  </g>
+</svg>

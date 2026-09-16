@@ -1,0 +1,46 @@
+name: Keep Supabase alive
+
+# Supabase Free pausiert Projekte nach 7 Tagen ohne Anfragen. Wer mal eine Woche
+# nicht trainiert, soll danach nicht vor einer schlafenden Datenbank stehen.
+# Alle 5 Tage ein Ping (2 Tage Puffer), wie bei Tsugi.
+
+on:
+  schedule:
+    - cron: '0 6 */5 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          curl -s -o /dev/null -w "Supabase-Ping: HTTP %{http_code}\n" \
+            "${{ vars.VITE_SUPABASE_URL }}/rest/v1/exercises?select=id&limit=1" \
+            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}"
+
+      - uses: actions/checkout@v4
+
+      # GitHub legt geplante Workflows nach 60 Tagen ohne Repo-Aktivität still.
+      # Deshalb ein Heartbeat auf einem eigenen Branch, der immer nur einen Commit hat.
+      - name: Heartbeat auf Branch 'keepalive'
+        run: |
+          git config user.name "keepalive-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin keepalive:refs/remotes/origin/keepalive 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/keepalive; then
+            git checkout -B keepalive origin/keepalive
+            echo "Letzter Ping: $(date -u '+%Y-%m-%d %H:%M UTC')" > HEARTBEAT.md
+            git add HEARTBEAT.md
+            git commit --amend -m "keepalive: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          else
+            git checkout --orphan keepalive
+            git rm -rf . > /dev/null 2>&1 || true
+            echo "Letzter Ping: $(date -u '+%Y-%m-%d %H:%M UTC')" > HEARTBEAT.md
+            git add HEARTBEAT.md
+            git commit -m "keepalive: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          fi
+          git push origin keepalive --force
